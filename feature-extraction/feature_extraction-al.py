@@ -15,7 +15,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 
 # STEP 1: Load Data 
-df = pd.read_csv('smmh.csv')
+df = pd.read_csv('feature-extraction/smmh.csv')
 # print(f"Raw dataset shape: {df.shape}")
 # print(f"Missing values:\n{df.isnull().sum()}")
 
@@ -127,6 +127,31 @@ feature_scores = pd.DataFrame({
     'Pearson_Corr': corr_series
 }).sort_values('MI_Score', ascending=False)
 
+# Plot 1: Mutual Information Feature Importance
+# shows which survey features are most informative for predicting mental health risk
+top_features = feature_scores.head(15)
+
+plt.figure(figsize=(8,6))
+sns.barplot(x=top_features["MI_Score"], y=top_features.index)
+plt.title("Top features by Mutual Information")
+plt.xlabel("Mutual Information Score")
+plt.ylabel("Feature")
+plt.tight_layout()
+plt.show()
+
+# Plot 2: MI vs. Pearson Scatter
+# shows overall feature relevance using two stat measures (MI and Pearson)
+plt.figure(figsize=(7,6))
+sns.scatterplot(
+    x=feature_scores["MI_Score"],
+    y=feature_scores["Pearson_Corr"]
+)
+plt.title("Feature importance: MI vs Pearson Correlation")
+plt.xlabel("Mutual Information")
+plt.ylabel("Pearson Correlation")
+plt.tight_layout()
+plt.show()
+
 # Keep features where MI > 0.01 OR Pearson > 0.05
 selected_features = feature_scores[
     (feature_scores['MI_Score'] > 0.01) | (feature_scores['Pearson_Corr'] > 0.05)
@@ -141,11 +166,35 @@ X_train = X_train[selected_features]
 X_val   = X_val[selected_features]
 X_test  = X_test[selected_features]
 
+# Plot 3: Correlation Heatmap of Selected Features
+# shows relationships between selected features, helps detect redundancy
+plt.figure(figsize=(12,10))
+sns.heatmap(X_train.corr(), cmap="coolwarm", center=0)
+plt.title("Correlation Heatmap of Selected Features")
+plt.tight_layout()
+plt.show()
+
 # STEP 13: SMOTE — Balance Training Set Only
 print(f"Before SMOTE (train only): {pd.Series(y_train).value_counts().to_dict()}")
 smote = SMOTE(random_state=42)
 X_train_bal, y_train_bal = smote.fit_resample(X_train, y_train)
 print(f"After SMOTE (train only): {pd.Series(y_train_bal).value_counts().to_dict()}")
+ 
+# Plot 4: Class Distribution before/after SMOTE
+# shows class imbalance issue and how smote fixed it (generates synthetic data)
+plt.figure(figsize=(6,5))
+sns.countplot(x=y_train)
+plt.title("Class Distribution Before SMOTE")
+plt.xlabel("Risk Class")
+plt.ylabel("Count")
+plt.show()
+
+plt.figure(figsize=(6,5))
+sns.countplot(x=y_train_bal)
+plt.title("Class Distribution After SMOTE")
+plt.xlabel("Risk Class")
+plt.ylabel("Count")
+plt.show()
 
 # STEP 14: Save Outputs
 if not os.path.exists('train.csv'):
