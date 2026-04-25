@@ -3,7 +3,7 @@ MindMetrics — CMPS 4700
 Assignment 1: Preprocessing Code
 Template Format: SAMPLE_ID | TARGET | A1 | A2 | ... | An
 """
-
+'''
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
@@ -14,8 +14,8 @@ import seaborn as sns
 
 # STEP 1: Load Data 
 df = pd.read_csv('smmh.csv')
-print(f"Raw dataset shape: {df.shape}")
-print(f"Missing values:\n{df.isnull().sum()}")
+# print(f"Raw dataset shape: {df.shape}")
+# print(f"Missing values:\n{df.isnull().sum()}")
 
 # STEP 2: Rename Columns 
 col_map = {
@@ -38,6 +38,7 @@ col_map = {
     '19. On a scale of 1 to 5, how frequently does your interest in daily activities fluctuate?': 'Q19',
     '20. On a scale of 1 to 5, how often do you face issues regarding sleep?': 'Q20',
 }
+print('RUN STARTS HERE')
 df = df.rename(columns=col_map)
 df = df.drop(columns=['Timestamp', '6. Do you use social media?',
                        '7. What social media platforms do you commonly use?'])
@@ -45,7 +46,6 @@ df = df.drop(columns=['Timestamp', '6. Do you use social media?',
 # STEP 3: Handle Missing Values 
 # Organization: 30 missing → fill with 'Unknown'
 df['Organization'] = df['Organization'].fillna('Unknown')
-print(f"Missing after imputation: {df.isnull().sum().sum()}")
 
 # STEP 4: Normalize Gender 
 def normalize_gender(g):
@@ -55,6 +55,8 @@ def normalize_gender(g):
     return 'Other'
 df['Gender'] = df['Gender'].apply(normalize_gender)
 
+# Normalize organization
+
 # STEP 5: Ordinal Encode Daily Usage 
 usage_map = {
     'Less than an Hour': 0, 'Between 1 and 2 hours': 1,
@@ -62,7 +64,6 @@ usage_map = {
     'Between 4 and 5 hours': 4, 'More than 5 hours': 5,
 }
 df['Daily_Usage'] = df['Daily_Usage'].map(usage_map)
-
 # STEP 6: Build Target Variable 
 # Composite mental health score from Q9–Q20 (12 Likert items)
 score_cols = [f'Q{i}' for i in range(9, 21)]
@@ -76,7 +77,6 @@ def risk_tier(s):
 df['TARGET'] = df['MH_Score'].apply(risk_tier)
 df = df.drop(columns=['MH_Score'])
 print(f"\nClass distribution:\n{df['TARGET'].value_counts()}")
-
 # STEP 7: One-Hot Encode Categoricals 
 cat_cols = ['Gender', 'Relationship_Status', 'Occupation', 'Organization']
 df = pd.get_dummies(df, columns=cat_cols, drop_first=False)
@@ -84,6 +84,7 @@ df = pd.get_dummies(df, columns=cat_cols, drop_first=False)
 # STEP 8: Label Encode Target 
 le = LabelEncoder()
 df['TARGET'] = le.fit_transform(df['TARGET'])
+
 # Classes: 0=High Risk, 1=Low Risk, 2=Moderate Risk
 
 # STEP 9: Min-Max Normalize Numeric Features 
@@ -107,7 +108,7 @@ X = df_out.drop(columns=['SAMPLE_ID', 'TARGET'])
 y = df_out['TARGET']
 smote = SMOTE(random_state=42)
 X_bal, y_bal = smote.fit_resample(X, y)
-print(f"\nAfter SMOTE: {pd.Series(y_bal).value_counts().to_dict()}")
+# print(f"\nAfter SMOTE: {pd.Series(y_bal).value_counts().to_dict()}")
 
 # STEP 12: Train/Val/Test Split
 X_train, X_temp, y_train, y_temp = train_test_split(
@@ -120,3 +121,5 @@ print(f"Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
 # STEP 13: Save Outputs
 df_out.to_excel('MindMetrics_preprocessed.xlsx', index=False, sheet_name='Preprocessed')
 print("Saved preprocessed Excel file.")
+
+'''
