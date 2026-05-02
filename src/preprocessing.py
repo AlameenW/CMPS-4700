@@ -70,22 +70,29 @@ def preprocess(df):
 
 
     # daily usage encoding
-    if 'Daily_Usage' in df.columns:
-        usage_map = {
-            'Less than an Hour': 0,
-            'Between 1 and 2 hours': 1,
-            'Between 2 and 3 hours': 2,
-            'Between 3 and 4 hours': 3,
-            'Between 4 and 5 hours': 4,
-            'More than 5 hours': 5,
-        }
 
-        df['Daily_Usage'] = (
-            df['Daily_Usage']
-            .astype(str)
-            .str.strip()
-            .map(usage_map)
-        )
+    if 'Daily_Usage' in df.columns:
+        df['Daily_Usage'] = df['Daily_Usage'].astype(str).str.lower().str.strip()
+
+        def encode_usage(value):
+            if 'less than' in value or 'less than an hour' in value:
+                return 0
+            elif '1' in value and '2' in value:
+                return 1
+            elif '2' in value and '3' in value:
+                return 2
+            elif '3' in value and '4' in value:
+                return 3
+            elif '4' in value and '5' in value:
+                return 4
+            elif 'more than' in value or '5' in value:
+                return 5
+            else:
+                return 2  # default middle value
+
+        df['Daily_Usage'] = df['Daily_Usage'].apply(encode_usage)
+
+        print("Daily_Usage NaNs after mapping:", df['Daily_Usage'].isna().sum())
 
         df['Daily_Usage'] = df['Daily_Usage'].fillna(df['Daily_Usage'].median())
     # #

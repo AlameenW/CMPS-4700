@@ -94,9 +94,13 @@ def plot_model_boxplot(scores, model_name="Model"):
 # Feature Distribution Plot
 def plot_feature_distribution(df, feature_list):
 
-    plt.figure()
+    valid_features = [col for col in feature_list if col in df.columns]
 
-    df[feature_list].hist(bins=15, figsize=(10,6))
+    if len(valid_features) == 0:
+        print("Skipping feature distribution plot: no valid features found")
+        return
+
+    df[valid_features].hist(bins=15, figsize=(10, 6))
 
     plt.suptitle("Feature Distributions")
     plt.tight_layout()

@@ -23,7 +23,11 @@ from classifiers.svm import predict as predict_svm
 from classifiers.svm import save as save_model
 from classifiers.svm import load as load_model
 
-from sklearn.metrics import accuracy_score
+from classifiers.ann import train as train_ann
+from classifiers.dt import train as train_dt
+from classifiers.knn import train as train_knn
+
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 
 
@@ -132,44 +136,97 @@ def train_pipeline():
     # -------------------------
     # MODEL TRAINING
     # -------------------------
-    model = train_svm(X_train, y_train)
+    model = {
+        "ANN": train_ann(X_train, y_train),
+        "SVM": train_svm(X_train, y_train),
+        "Decision Tree": train_dt(X_train, y_train),
+        "KNN": train_knn(X_train, y_train)
+    }
 
     # -------------------------
-    # LEARNING CURVE
+    # MODEL TRAINING
     # -------------------------
-    plot_learning_curve(model, X_train, y_train, model_name="SVM")
+    models = {
+        "ANN": train_ann(X_train, y_train),
+        "SVM": train_svm(X_train, y_train),
+        "Decision Tree": train_dt(X_train, y_train),
+        "KNN": train_knn(X_train, y_train)
+    }
+
+    # -------------------------
+    # MODEL ASSESSMENT
+    # -------------------------
+    for name, model in models.items():
+
+        print(f"\n==============================")
+        print(f"{name} RESULTS")
+        print(f"==============================")
+
+        val_preds = model.predict(X_val)
+        test_preds = model.predict(X_test)
+
+        val_acc = accuracy_score(y_val, val_preds)
+        test_acc = accuracy_score(y_test, test_preds)
+
+        print(f"Validation Accuracy: {val_acc:.4f}")
+        print(f"Test Accuracy: {test_acc:.4f}")
+
+        print("\nClassification Report:")
+        print(classification_report(y_test, test_preds))
+
+        print("Confusion Matrix:")
+        print(confusion_matrix(y_test, test_preds))
+
+        # Learning curve for each model
+        plot_learning_curve(model, X_train, y_train, model_name=name)
 
     # -------------------------
     # 5-TRIAL STABILITY TEST
     # -------------------------
-    scores = []
+    train_functions = {
+        "ANN": train_ann,
+        "SVM": train_svm,
+        "Decision Tree": train_dt,
+        "KNN": train_knn
+    }
 
-    for i in range(5):
+    for name, train_func in train_functions.items():
+        
+        scores = []
 
-        X_tr, X_te, y_tr, y_te = train_test_split(
-            X_train,
-            y_train,
-            test_size=0.2,
-            random_state=i,
-            stratify=y_train
-        )
+        for i in range(5):
 
-        m = train_svm(X_tr, y_tr)
-        preds = m.predict(X_te)
+            X_tr, X_te, y_tr, y_te = train_test_split(
+                X_train,
+                y_train,
+                test_size=0.2,
+                random_state=i,
+                stratify=y_train
+            )
 
-        scores.append(accuracy_score(y_te, preds))
+            m = train_svm(X_tr, y_tr)
+            preds = m.predict(X_te)
+
+            scores.append(accuracy_score(y_te, preds))
 
     # -------------------------
     # BOXPLOT
     # -------------------------
-    plot_model_boxplot(scores, model_name="SVM")
+    plot_model_boxplot(scores, model_name=name)
+    
+
+    print(f"\n{name} 5-Trial Scores:")
+    print(scores)
+    print(f"{name} Average Accuracy: {sum(scores) / len(scores):.4f}")
 
     # -------------------------
     # SAVE MODEL
     # -------------------------
-    save_model(model, MODEL_PATH)
+    for name, model in models.items():
+        filename = f"{name.lower().replace(' ', '_')}_model.pkl"
+        save_model(model, MODEL_PATH)
 
-    print("Model trained and saved successfully.")
+    print("\nAll models trained, evaluated, and saved successfully.")
 
 
 # -------------------------
